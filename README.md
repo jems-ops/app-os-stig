@@ -1,9 +1,5 @@
-Good — this is exactly the kind of output you want for STIG validation 👍
-Let’s break it down and tell you what’s missing + what to fix (quickly)
 
-⸻
-
-🔍 What your results show
+### Result:
 
 ✅ Apache (GOOD)
 
@@ -28,8 +24,6 @@ Timeout
 👉 That means:
 	•	Using defaults ❌
 	•	This is where your finding comes from
-
-⸻
 
 ❌ 389-DS (LDAP – NOT CONFIGURED)
 
@@ -70,18 +64,20 @@ Because:
 
 ✅ 1. Fix Apache (add missing settings)
 
+```bash
 echo "MaxRequestWorkers 150" >> /etc/httpd/conf.d/tuning.conf
 echo "ServerLimit 150" >> /etc/httpd/conf.d/tuning.conf
 echo "Timeout 60" >> /etc/httpd/conf.d/tuning.conf
-
+```
 
 ⸻
 
 ✅ 2. Fix OS limits (IMPORTANT)
 
+```bash
 echo "* soft nofile 65536" >> /etc/security/limits.conf
 echo "* hard nofile 65536" >> /etc/security/limits.conf
-
+```
 Then:
 
 ulimit -n 65536
@@ -92,40 +88,41 @@ ulimit -n 65536
 ✅ 3. Fix 389-DS (LDAP tuning)
 
 Run:
-
+```bash
 ldapmodify -x -D "cn=Directory Manager" -W <<EOF
 dn: cn=config
 changetype: modify
 add: nsslapd-threadnumber
 nsslapd-threadnumber: 16
 EOF
-
+```
 Then:
-
+```bash
 ldapmodify -x -D "cn=Directory Manager" -W <<EOF
 dn: cn=config
 changetype: modify
 add: nsslapd-maxdescriptors
 nsslapd-maxdescriptors: 8192
 EOF
-
+```
 
 ⸻
 
 🔄 Restart
-
+```bash
 systemctl restart httpd
 systemctl restart dirsrv@*
-
+```
 
 ⸻
 
 🔍 Re-verify
 
+```bash
 grep -Ei "MaxRequestWorkers|ServerLimit|Timeout" /etc/httpd/conf.d/*.conf
 grep -Ei "nsslapd-" /etc/dirsrv/slapd-*/dse.ldif
 ulimit -n
-
+```
 
 ⸻
 
